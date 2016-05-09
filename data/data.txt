@@ -1,0 +1,19 @@
+Common Data Set Info: 2005-2015: NESCAC schools
+
+Data needed:
+1. Relative importance of racial/ethnic status in first-time, first-year,
+   degree-seeking admission decisions. (C7)
+2. Enrollment by racial/ethnic category. (B2)
+
+Schools:
+1. Amherst (Amherst, MA)
+2. Bates (Lewiston, ME)
+3. Bowdoin (Brunswick, ME)
+4. Colby (Waterville, ME)
+5. Connecticut College (New London, CT)
+6. Hamilton (Clinton, NY)
+7. Middlebury (Middlebury, VT)
+8. Trinity (Hartford, CT)
+9. Tufts (Medford, MA)
+10. Wesleyan (Middletown, CT)
+11. Williams (Williamstown, MA)
