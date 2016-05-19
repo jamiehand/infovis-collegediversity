@@ -81,12 +81,22 @@
             </p>
         </div>
         <div id="clear"></div>
-
+        <p>Year: <select id="yearSelect"><optgroup label="Metrics" id="yearmetrics"></optgroup></select></p>
     </div>
 
     <script>
+
+
+      var yearData = "2005";
+
       var createVis = function(data){
+          /* vis properties */
+          width = 700;
+          height = 500;
+
+
           /* remove unwanted ethnic categories */
+          // var yearData;
           var unwanted_cats = ["total", "white_nonhispanic", "white"];
           data = data.filter(function(d){
               if(unwanted_cats.indexOf(d.ethnic_cat) != -1){
@@ -95,11 +105,7 @@
               return true;
           });
 
-
-
-          width = 700;
-          height = 500;
-
+          /* nest data */
           var nested = d3.nest()
                          .key(function(d){return d.year;})
                          .key(function(d){return d.ethnic_cat;})
@@ -113,6 +119,32 @@
                          })
                          .entries(data);
 
+          console.log("HELLOOOOO nested");
+          console.log(nested);
+
+
+
+          /* populate year menu */
+          var yearMenu = d3.select("#yearmetrics");
+          nested.forEach(function(obj){
+            yearMenu.append("option").attr("value", obj.key).text(obj.key);
+          })
+          // // for (prop in nested){
+          // //   console.log("prop!!!!!!!!");
+          // //   console.log(prop);
+          // //   yearMenu.append("option").attr("value", prop).text(prop);
+          // // }
+          //
+          /* start with default value of 2005 */
+          // document.getElementById('yearSelect').value = "2005";
+
+          d3.select("#yearSelect").on("change", function(){
+            createVis.setYear(this.value);
+            createVis(data);
+          });
+
+
+
           /* make a machine that does the stacking */
           // stack an array of objects, with x = 2005, y = num_firstyears, y0 = i
           var stack = d3.layout.stack()
@@ -121,7 +153,10 @@
                                });
 
           /* actually stack the data */
-          var stackedData = stack(nested[0].values);
+          console.log(nested);
+          console.log(yearData);
+          console.log(nested.indexOf(yearData));
+          var stackedData = stack(nested.find(yearData).values);
 
           var margin = {top: 20, right: 50, bottom: 40, left: 30};
             //   width = 500 - margin.left - margin.right,
@@ -172,10 +207,11 @@
                                      "text-anchor":"middle",
                                      "transform":"rotate(-90)"
                                  })
-                                 .text("Number of First Year Students Entering");
+                                 .text("Number of First Year Students Entering in " + yearData);
                                  // TODO include the year, e.g. "Entering in 2007"
 
-          x.domain(stackedData[0].values.map(function(d) {return d.x;}));  // TODO better way to do this?
+          /* get all college names */
+          x.domain(stackedData[0].values.map(function(d) {return d.x;}));
           y.domain([0, d3.max(stackedData,
               function(d){
                   return d3.max(d.values, function(e){
@@ -189,7 +225,7 @@
               stackedData.splice(indexOfCollege, 1);
               stackedData.unshift(collegeObject);
               /* restack the data after rearranging it */
-              stackedData = stack(nested[0].values);  // TODO change this to be nested[selectedYear]
+              stackedData = stack(nested.find(yearData).values);  // TODO change this to be nested[selectedYear]
               layers.selectAll("rect")
                         .transition()
                         .duration(1000)
@@ -258,6 +294,53 @@
            printCollegeList();
 
       };
+
+    createVis.setYear = function(value){
+        if (!arguments.length) {
+          return yearData;
+        }
+        yearData = value;
+        console.log("SET YEARDATA");
+        console.log(yearData);
+        return createVis;
+      }
+
+    var loadData = function(data){
+      // var nested = d3.nest()
+      //                .key(function(d){return d.year;})
+      //                .key(function(d){return d.ethnic_cat;})
+      //                .rollup(function(array){
+      //                  return array.map(function(object){
+      //                    return {
+      //                      x: object.college,
+      //                      y: +object.num_firstyears
+      //                    };
+      //                  });
+      //                })
+      //                .entries(data);
+      //
+      // console.log("HELLOOOOO nested");
+      // console.log(nested);
+      // createVis(data, nested);
+
+
+      // var yearMenu = d3.select("#yearmetrics");
+      // nested.forEach(function(obj){
+      //   yearMenu.append("option").attr("value", obj.key).text(obj.key);
+      // })
+      // // for (prop in nested){
+      // //   console.log("prop!!!!!!!!");
+      // //   console.log(prop);
+      // //   yearMenu.append("option").attr("value", prop).text(prop);
+      // // }
+      //
+      // document.getElementById('yearSelect').value = "2005";
+      //
+      // d3.select("#yearSelect").on("change", function(){
+      //   createVis.setYear(this.value);
+      //   createVis(data, nested);
+      // });
+    }
 
     d3.csv("college_data.csv", createVis);
 
