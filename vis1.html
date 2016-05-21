@@ -76,7 +76,7 @@
 
       #info{
         position:absolute;
-        width:150px;
+        width:170px;
         height:auto;
         padding:10px;
         background-color:white;
@@ -108,11 +108,15 @@
   <body>
     <!-- tooltip div -->
     <div id="info" class="hidden">
-        <h3 id="schoolAndYear" >School, Year</h3>
-        <p><span>ethnicCat</span>: <span id="ethnicCat">ethnicCat</span></p>
-        <p><span>numEthnicCat</span>: <span id="numEthnicCat">numEthnicCat</span></p>
-        <p><span>totalNumFirstYears</span>: <span id="totalNumFirstYears">totalNumFirstYears</span></p>
-        <p><span>percentOfTotal</span>: <span id="percentOfTotal">percentOfTotal</span></p>
+        <h3>
+          <span id="ethnicCat">ethnicCat</span> <br>
+          <span id="numEthnicCat">numEthnicCat</span> students
+        </h3>
+        <p>
+          of <span id="totalNumFirstYears">totalNumFirstYears</span>
+          first years (<span id="percentOfTotal">percentOfTotal</span>)
+        </p>
+        <p id="schoolAndYear" >School, Year</p>
     </div>
 
 
@@ -205,17 +209,12 @@
           /* actually stack the data */
           var stackedData = stack(nested[0].values);
 
-          var margin = {top: 20, right: 50, bottom: 40, left: 30};
-            //   width = 500 - margin.left - margin.right,
-            //   height = 500 - margin.top - margin.bottom;
-
-          /* make x and y scales */
+          /* make x, y, and color scales */
           var x = d3.scale.ordinal().rangeRoundBands([0, width]);
           var y = d3.scale.linear().rangeRound([height, 0]);
           var color = d3.scale.category10();
-          // var colorValue = function(d) {
-          //     return d.ethnic_cat;
-          // };
+
+          var margin = {top: 20, right: 50, bottom: 40, left: 30};
 
           var svg = d3.select("#visDiv").append("svg")
                       .attr("width", width + margin.left + margin.right)
@@ -224,6 +223,7 @@
           var chart = svg.append("g")
                       .attr("transform", "translate("+margin.left+","+margin.top+")");
 
+          /* make axes */
           var xAxisG = chart.append("g")
                         .attr({
                             "class": "axis_title",
@@ -297,7 +297,8 @@
                     });
                 })]).nice();
 
-            /* **** event handlers for click and hover **** */
+
+            /****** event handlers for click and hover ******/
 
             /* **** click handler **** */
             var rearrangeRects = function(collegeObject){
@@ -319,26 +320,9 @@
             /* **** hover handlers **** */
             var showTooltip = function(d){
 
-              console.log("d");
-              console.log(d);
-
-              /* TODO make this work :) :) :) */
-
+              /* get mouse coordinates */
               var coordinates = d3.mouse(svg.node());
               var bbox = svg.node().getBoundingClientRect();
-
-              /* get the year that the mouse is hovering over */
-              // var selectedYear = Math.round(xScale.invert(
-                //  coordinates[0] - margins.left));
-
-              // var selectedCount = 0;
-              // d.values.forEach(function(d){
-                // if (d.Year == selectedYear) {
-                    // selectedCount = d.Count;
-                // }
-              // });
-              // var selectedCount = numberFormatter(selectedCount);
-
               coordinates[0] += bbox.left;
               coordinates[1] += bbox.top;
 
@@ -352,15 +336,16 @@
               var info = d3.select("#info");
               /* note: d.x has college name;
                * d.y has num_firstyears for the given d.ethnic_cat */
+              info.select("#ethnicCat").text(d.ethnicCat + ":")
+                  .style({color: color(d.ethnicCat)});
               info.select("#schoolAndYear").text(d.x +", "+ d.year);
-              info.select("#ethnicCat").text(d.ethnicCat);
               info.select("#numEthnicCat").text(d.y);
               info.select("#totalNumFirstYears").text(totalNumFirstYears);
               info.select("#percentOfTotal").text(percentOfTotal);
 
 
               info.style({
-                    left: (coordinates[0] + 25) + "px",
+                    left: (coordinates[0] + 18) + "px",
                     top: (coordinates[1] ) + "px",
                   })
                   .classed("hidden", false);
@@ -368,15 +353,10 @@
 
 
             hideTooltip = function(d){
-              d3.select(this)
-                .classed("selected", false)
-                .attr("r", 2);
-
                 var info = d3.select("#info");
                 info.classed("hidden", true);
             };
-
-            /* **** end event handlers **** */
+            /****** end event handlers ******/
 
 
             var layers = chart.selectAll(".layer")
@@ -403,6 +383,7 @@
                       })
                       .attr("width", x.rangeBand() - 1)
                   .on("click", function(d){
+                      hideTooltip(d);
                       /* get this rect's parentNode (i.e. its g) */
                       var collegeObject = d3.select(this.parentNode).datum();
                       rearrangeRects(collegeObject);
