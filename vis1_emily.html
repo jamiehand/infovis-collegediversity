@@ -31,6 +31,11 @@
         shape-rendering: crisp-edges;
       }
 
+      .axis_title text{
+          font-family:sans-serif;
+          font-size:12px;
+      }
+
       .collegeListElement {
         margin: 0;
       }
@@ -163,7 +168,7 @@
 
           var xAxisG = chart.append("g")
                         .attr({
-                            "class": "axis",
+                            "class": "axis_title",
                             "transform": "translate(0,"+height+")"
                         });
           var xAxis = d3.svg.axis()
@@ -172,14 +177,14 @@
           var xAxisTitle = xAxisG.append("text")
                                  .attr({
                                      "x":width/2,
-                                     "y":(margin.bottom),
+                                     "y":(margin.bottom - 5),
                                      "text-anchor":"middle"
                                  })
                                  .text("College");
 
           var yAxisG = chart.append("g")
                         .attr({
-                            "class": "axis"
+                            "class": "axis_title"
                         });
           var yAxis = d3.svg.axis()
                         .scale(y)
@@ -195,16 +200,16 @@
 
 
 
-           //When a year is selected, redraw the visualization
+           /* When a year is selected, redraw the visualization */
            d3.select("#yearMenu").on("change",function(){
-             console.log(this.value);
 
-             for (i in nested){ //not the most elegant but it works
-              console.log(nested[i].key);
-              if (nested[i].key == this.value){
-                console.log("key found!");
-                vis(nested[i]);
-              }
+             /* finds year entry in 'nested' (nestedData) based on the
+              * selected year */
+             for (i in nested){
+                if (nested[i].key == this.value){
+                  /* redraw vis */
+                  vis(nested[i]);
+                }
              }
            });
 
@@ -230,7 +235,6 @@
                            });
                          })
                          .entries(data);
-        console.log(nested);
 
         var yearDrop = d3.select("#yearDropDown");
         for (i in nested){
@@ -247,15 +251,18 @@
                                });
 
 
-        //initialize cur_year
+         /* initialize cur_year */
          var cur_year = nested[0];
-         console.log(cur_year);
 
           var vis = function(year_obj){ //year should be a year ~object~ not just the year
             console.log("draw vis");
-            //this is where we will do the actual drawing.
+            /* this is where we will do the actual drawing. */
 
             /* actually stack the data */
+            console.log("year_obj");
+            console.log(year_obj);
+            console.log("year_obj.values");
+            console.log(year_obj.values);
             var stackedData = stack(year_obj.values);
             console.log(stackedData);
 
@@ -273,11 +280,15 @@
 
             var rearrangeRects = function(collegeObject){
                 var indexOfCollege = stackedData.indexOf(collegeObject);
+                console.log("stackedData before");
+                console.log(stackedData);
                 /* remove from list, and append to front */
                 stackedData.splice(indexOfCollege, 1);
                 stackedData.unshift(collegeObject);
+                console.log("stackedData after");
+                console.log(stackedData);
                 /* restack the data after rearranging it */
-                stackedData = stack(cur_year.values);
+                stackedData = stack(year_obj.values);
                 layers.selectAll("rect")
                           .transition()
                           .duration(1000)
