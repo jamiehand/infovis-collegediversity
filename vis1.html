@@ -47,6 +47,10 @@ especially code on tooltips and configurable scatterplot. -->
   #visDiv {
     float: left;
   }
+
+  #lineDiv{
+    float: left;
+  }
   #legend {
     width:145px;
     height:210px;
@@ -101,6 +105,9 @@ especially code on tooltips and configurable scatterplot. -->
     font-size:18px;
   }
 
+  .hidden {
+    display: none;
+  }
 
 
   </style>
@@ -138,6 +145,7 @@ especially code on tooltips and configurable scatterplot. -->
     <div id="clear"></div>
 
   </div>
+  <div id="lineDiv" class="hidden"></div>
 
   <script>
 
@@ -148,7 +156,7 @@ especially code on tooltips and configurable scatterplot. -->
   var createMainVis = function(data){
 
     /* get all_firstyrs_data for tooltip and for calculating
-    * percentages */
+     * percentages */
     var all_firstyrs_data = data.filter(function(d){
       if(d.ethnic_cat == "total"){
         return true;
@@ -175,6 +183,116 @@ especially code on tooltips and configurable scatterplot. -->
       return true;
     });
 
+    /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+    var createLineVis = function(data){
+
+      /* nest the data by college, then by ethnic cat. */
+      var nested = d3.nest()
+      .key(function(d){return d.college;})
+      .key(function(d){return d.ethnic_cat;})
+      .entries(data);
+
+      console.log("nested college data: ");
+      console.log(nested);
+
+      /* now we want to create a new, hidden svg for the line visualization
+      it will become unhidden on the first click of the x-axis ticks
+      */
+      var lineWidth = 400;
+      var lineHeight = 400;
+      var margin = {top: 20, right: 50, bottom: 40, left: 30};
+      //   width = 500 - margin.left - margin.right,
+      //   height = 500 - margin.top - margin.bottom;
+
+      /* make x and y scales */
+      var x2 = d3.scale.ordinal().rangeRoundBands([0, width]);
+      var y2 = d3.scale.linear().rangeRound([height, 0]);
+      var color = d3.scale.category10();
+      // var colorValue = function(d) {
+      //     return d.ethnic_cat;
+      // };
+
+
+      var svg = d3.select("#lineDiv").append("svg")
+      .attr("width", lineWidth + margin.left + margin.right)
+      .attr("height", lineHeight + margin.top + margin.bottom);
+
+
+      var chart = svg.append("g")
+      .attr("transform", "translate("+margin.left+","+margin.top+")");
+
+      var xAxisG = chart.append("g")
+      .attr({
+        "class": "axis_title",
+        "transform": "translate(0,"+lineHeight+")"
+      });
+      var xAxis = d3.svg.axis()
+      .scale(x2)
+      .orient("bottom");
+
+
+      var xAxisTitle = xAxisG.append("text")
+      .attr({
+        "x":lineWidth/2,
+        "y":(margin.bottom - 5),
+        "text-anchor":"middle"
+      })
+      .text("Year");
+
+      var yAxisG = chart.append("g")
+      .attr({
+        "class": "axis_title"
+      });
+      var yAxis = d3.svg.axis()
+      .scale(y2)
+      .orient("left");
+      var yAxisTitle = yAxisG.append("text")
+      .attr({
+        "x":-lineWidth/2,
+        "y":1/2 * -margin.left,
+        "text-anchor":"middle",
+        "transform":"rotate(-90)"
+      })
+      .text("Number of First Year Students Entering");
+
+      /* draws a linechart for one college in the lineDiv */
+      createLineVis.drawLineVis = function(college_index){
+        console.log(nested[college_index]);
+        var college = nested[college_index]; //the object for the college we want to draw
+
+        //now come the fun part: drawing a line chart. The good news: the axes are already set up
+        /*
+        x.domain(stackedData[0].values.map(function(d) {return d.x;}));
+        y.domain([0, d3.max(stackedData,
+        function(d){
+        return d3.max(d.values, function(e){
+        return +e.y0 + +e.y;
+      });
+    })]).nice();
+    */
+
+    x2.domain(college.values.map(function(d) {return d.year;}));
+    y2.domain(d3.extent(college.values, function(d){
+      return d3.extent(d.values,function(e){
+        return +e.num_firstyears;
+      })
+
+    }));
+
+    //DRAW PATH OR SOMETHING NOW/HERE
+
+  };
+
+  //default to drawing Amhearst, but it won't matter because it's hidden
+  createLineVis.drawLineVis(0);
+  return createLineVis;
+
+};
+
+    var create = createLineVis(data);
+
+    /* ~~~~~~~~go back to setting up main vis ~~~~~~~~ */
+
     var nested = d3.nest()
     .key(function(d){return d.year;})
     .key(function(d){return d.ethnic_cat;})
@@ -189,6 +307,7 @@ especially code on tooltips and configurable scatterplot. -->
       });
     })
     .entries(data);
+    // console.log(nested);
 
     var yearDrop = d3.select("#yearDropDown");
     for (i in nested){
@@ -196,8 +315,8 @@ especially code on tooltips and configurable scatterplot. -->
       .attr("id", nested.indexOf(nested[i]));
     }
 
-
     /* make a machine that does the stacking */
+    // stack an array of objects, with x = 2005, y = num_firstyears, y0 = i
     var stack = d3.layout.stack()
     .values(function(d){
       return d.values;
@@ -229,6 +348,8 @@ especially code on tooltips and configurable scatterplot. -->
     var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom");
+
+
     var xAxisTitle = xAxisG.append("text")
     .attr({
       "x":width/2,
@@ -259,7 +380,7 @@ especially code on tooltips and configurable scatterplot. -->
     d3.select("#yearMenu").on("change",function(){
 
       /* finds year entry in 'nested' (nestedData) based on the
-      * selected year */
+       * selected year */
       for (i in nested){
         if (nested[i].key == this.value){
           /* redraw vis */
@@ -274,7 +395,6 @@ especially code on tooltips and configurable scatterplot. -->
 
     /* year should be a year ~object~ not just the year */
     var vis = function(year_obj){
-
       /* this is where we will do the actual drawing. */
 
       /* actually stack the data */
@@ -353,7 +473,6 @@ especially code on tooltips and configurable scatterplot. -->
         };
         /****** end event handlers ******/
 
-
         var layers = chart.selectAll(".layer")
         .data(stackedData, function(d){
           /* get all ethnic_cats */
@@ -391,6 +510,27 @@ especially code on tooltips and configurable scatterplot. -->
         .attr("transform", "translate("+margin.left+","+height+")")
         .call(xAxis);
 
+        /* create an action listener for the x-axis ticks (the names of the colleges)
+        so that when a college is clicked, a new visualization will pop up */
+        svg.selectAll(".tick")
+        .on("click", function(d,i) {
+          // console.log(d);
+          // console.log(i);
+
+          /* in this function we will call a function that draws our second vis
+          this vis will be a line chart that shows the ethnic breakdown of
+          the selected school over time
+          */
+          //TODO: write that function
+          //TODO: get college
+          var lineDiv = d3.select("#lineDiv")
+          lineDiv.classed("hidden", false);
+          create.drawLineVis(i);
+          /* we pass the index here to be able to access the right data in our other nested data */
+
+
+        });
+
         chart.append("g")
         .attr("class", "axis")
         .attr("transform", "translate("+margin.left+",0)")
@@ -413,21 +553,18 @@ especially code on tooltips and configurable scatterplot. -->
             });
           });
         };
-
         printCollegeList();
       };
 
       vis(cur_year);
+  };
 
-    };
+  /* call createMainVis */
+  d3.csv("college_data.csv", function(dataset){
+    createMainVis(dataset);
+  });
 
 
-
-    /* call createMainVis */
-    d3.csv("college_data.csv", function(dataset){
-      createMainVis(dataset);
-    });
-
-    </script>
-  </body>
-  </html>
+</script>
+</body>
+</html>
