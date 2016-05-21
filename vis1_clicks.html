@@ -80,7 +80,7 @@ especially code on tooltips and configurable scatterplot. -->
 
   #info{
     position:absolute;
-    width:150px;
+    width:170px;
     height:auto;
     padding:10px;
     background-color:white;
@@ -110,15 +110,20 @@ especially code on tooltips and configurable scatterplot. -->
   }
 
 
-
   </style>
 </head>
 <body>
   <!-- tooltip div -->
   <div id="info" class="hidden">
-    <h3 id="schoolAndYear" >School, Year</h3>
-    <p><span>Count</span>: <span id="count">Count</span></p>
-    <p><span>Year</span>: <span id="year">Count</span></p>
+    <h3>
+      <span id="ethnicCat">ethnicCat</span> <br>
+      <span id="numEthnicCat">numEthnicCat</span> students
+    </h3>
+    <p>
+      of <span id="totalNumFirstYears">totalNumFirstYears</span>
+      first years (<span id="percentOfTotal">percentOfTotal</span>)
+    </p>
+    <p id="schoolAndYear" >School, Year</p>
   </div>
 
 
@@ -149,6 +154,26 @@ especially code on tooltips and configurable scatterplot. -->
   height = 500;
 
   var createMainVis = function(data){
+
+    /* get all_firstyrs_data for tooltip and for calculating
+     * percentages */
+    var all_firstyrs_data = data.filter(function(d){
+      if(d.ethnic_cat == "total"){
+        return true;
+      }
+      return false;
+    });
+    var all_firstyrs_obj = d3.nest()
+    .key(function(d){return d.year;})
+    .key(function(d){return d.college;})
+    .rollup(function(array){
+      var object = array[0];
+      return {
+        num_firstyears: +object.num_firstyears
+      };
+    })
+    .map(all_firstyrs_data);
+
     /* remove unwanted ethnic categories */
     var unwanted_cats = ["total", "white_nonhispanic", "white"];
     data = data.filter(function(d){
@@ -266,10 +291,7 @@ especially code on tooltips and configurable scatterplot. -->
 
     var create = createLineVis(data);
 
-    /* ~~~~~~~~go back to seeting up main vis ~~~~~~~~ */
-
-    width = 700;
-    height = 500;
+    /* ~~~~~~~~go back to setting up main vis ~~~~~~~~ */
 
     var nested = d3.nest()
     .key(function(d){return d.year;})
@@ -278,12 +300,20 @@ especially code on tooltips and configurable scatterplot. -->
       return array.map(function(object){
         return {
           x: object.college,
-          y: +object.num_firstyears
+          y: +object.num_firstyears,
+          ethnicCat: object.ethnic_cat,
+          year: object.year
         };
       });
     })
     .entries(data);
     // console.log(nested);
+
+    var yearDrop = d3.select("#yearDropDown");
+    for (i in nested){
+      yearDrop.append("option").attr("value", nested[i].key).text(nested[i].key)
+      .attr("id", nested.indexOf(nested[i]));
+    }
 
     /* make a machine that does the stacking */
     // stack an array of objects, with x = 2005, y = num_firstyears, y0 = i
@@ -295,25 +325,21 @@ especially code on tooltips and configurable scatterplot. -->
     /* actually stack the data */
     var stackedData = stack(nested[0].values);
 
-    var margin = {top: 20, right: 50, bottom: 40, left: 30};
-    //   width = 500 - margin.left - margin.right,
-    //   height = 500 - margin.top - margin.bottom;
-
-    /* make x and y scales */
+    /* make x, y, and color scales */
     var x = d3.scale.ordinal().rangeRoundBands([0, width]);
     var y = d3.scale.linear().rangeRound([height, 0]);
     var color = d3.scale.category10();
-    // var colorValue = function(d) {
-    //     return d.ethnic_cat;
-    // };
+
+    var margin = {top: 20, right: 50, bottom: 40, left: 30};
 
     var svg = d3.select("#visDiv").append("svg")
     .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
+    .attr("height", height + margin.top + margin.bottom);
 
     var chart = svg.append("g")
     .attr("transform", "translate("+margin.left+","+margin.top+")");
 
+    /* make axes */
     var xAxisG = chart.append("g")
     .attr({
       "class": "axis_title",
@@ -354,7 +380,7 @@ especially code on tooltips and configurable scatterplot. -->
     d3.select("#yearMenu").on("change",function(){
 
       /* finds year entry in 'nested' (nestedData) based on the
-      * selected year */
+       * selected year */
       for (i in nested){
         if (nested[i].key == this.value){
           /* redraw vis */
@@ -364,17 +390,11 @@ especially code on tooltips and configurable scatterplot. -->
     });
 
 
-    var yearDrop = d3.select("#yearDropDown");
-    for (i in nested){
-      yearDrop.append("option").attr("value", nested[i].key).text(nested[i].key)
-      .attr("id", nested.indexOf(nested[i]));
-    }
-
-
     /* initialize cur_year */
     var cur_year = nested[0];
 
-    var vis = function(year_obj){ //year should be a year ~object~ not just the year
+    /* year should be a year ~object~ not just the year */
+    var vis = function(year_obj){
       /* this is where we will do the actual drawing. */
 
       /* actually stack the data */
@@ -392,6 +412,10 @@ especially code on tooltips and configurable scatterplot. -->
           });
         })]).nice();
 
+
+        /****** event handlers for click and hover ******/
+
+        /* **** click handler **** */
         var rearrangeRects = function(collegeObject){
           var indexOfCollege = stackedData.indexOf(collegeObject);
           /* remove from list, and append to front */
@@ -408,11 +432,50 @@ especially code on tooltips and configurable scatterplot. -->
           });
         };
 
+        /* **** hover handlers **** */
+        var showTooltip = function(d){
 
+          /* get mouse coordinates */
+          var coordinates = d3.mouse(svg.node());
+          var bbox = svg.node().getBoundingClientRect();
+          coordinates[0] += bbox.left;
+          coordinates[1] += bbox.top;
+
+          /* get the total count of first years for this year, for this school */
+          var totalNumFirstYears = all_firstyrs_obj[d.year][d.x].num_firstyears;
+
+          /* get the percentage  */
+          var numberFormatter = d3.format(".1%");
+          var percentOfTotal = numberFormatter(+d.y / +totalNumFirstYears);
+
+          var info = d3.select("#info");
+          /* note: d.x has college name;
+          * d.y has num_firstyears for the given d.ethnic_cat */
+          info.select("#ethnicCat").text(d.ethnicCat + ":")
+          .style({color: color(d.ethnicCat)});
+          info.select("#schoolAndYear").text(d.x +", "+ d.year);
+          info.select("#numEthnicCat").text(d.y);
+          info.select("#totalNumFirstYears").text(totalNumFirstYears);
+          info.select("#percentOfTotal").text(percentOfTotal);
+
+
+          info.style({
+            left: (coordinates[0] + 18) + "px",
+            top: (coordinates[1] ) + "px",
+          })
+          .classed("hidden", false);
+        }; /* end showTooltip */
+
+
+        hideTooltip = function(d){
+          var info = d3.select("#info");
+          info.classed("hidden", true);
+        };
+        /****** end event handlers ******/
 
         var layers = chart.selectAll(".layer")
         .data(stackedData, function(d){
-          // get all ethnic_cats
+          /* get all ethnic_cats */
           return d.key;
         });
 
@@ -422,7 +485,7 @@ especially code on tooltips and configurable scatterplot. -->
           return color(d.key);
         });
         layers.selectAll("rect")
-        // for every ethnic_cat, get num_firstyears
+        /* for every ethnic_cat, get num_firstyears */
         .data(function(d) {
           return d.values;
         })
@@ -434,10 +497,13 @@ especially code on tooltips and configurable scatterplot. -->
         })
         .attr("width", x.rangeBand() - 1)
         .on("click", function(d){
+          hideTooltip(d);
           /* get this rect's parentNode (i.e. its g) */
           var collegeObject = d3.select(this.parentNode).datum();
           rearrangeRects(collegeObject);
-        });
+        })
+        .on("mouseover", showTooltip)
+        .on("mouseout", hideTooltip);
 
         chart.append("g")
         .attr("class", "axis")
@@ -471,7 +537,7 @@ especially code on tooltips and configurable scatterplot. -->
         .call(yAxis);
 
 
-        printCollegeList = function(){
+        var printCollegeList = function(){
           var collegeList = d3.select("#collegeList");
           collegeList.selectAll(".collegeListElement").remove();
 
@@ -491,21 +557,12 @@ especially code on tooltips and configurable scatterplot. -->
       };
 
       vis(cur_year);
+  };
 
-
-};
-
-
-
-
-
-d3.csv("college_data.csv", function(dataset){
-
-  createMainVis(dataset);
-
-});
-
-
+  /* call createMainVis */
+  d3.csv("college_data.csv", function(dataset){
+    createMainVis(dataset);
+  });
 
 
 </script>
