@@ -7,6 +7,11 @@ especially code on tooltips and configurable scatterplot. -->
   <title>Emily and Jamie Final Project</title>
   <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
   <style type="text/css">
+
+  body{
+    font-family: sans-serif;
+  }
+
   h1{
     margin:0px;
     font-family:sans-serif;
@@ -49,16 +54,44 @@ especially code on tooltips and configurable scatterplot. -->
   }
 
   #lineDiv{
+  }
+
+  #lineDivTitle{
+    text-align: center;
+  }
+
+  #lineDivAndTitle{
+    float: left;
+    margin-top: 100px;
+    margin-bottom: 100px;
+  }
+
+  #descriptionAndLegend{
     float: left;
   }
-  #legend {
+
+  #legend{
     width:145px;
     height:210px;
-    float:left;
-    margin:3em;
-    padding:1em;
-    border:5px solid black;
+    margin:1em;
+    padding-left:1em;
+    padding-right:1em;
+    border:2px solid black;
   }
+
+  #description{
+    width:145px;
+    height:250px;
+    margin:1em;
+    padding-left:1em;
+    padding-right:1em;
+    border:2px solid black;
+  }
+
+  #description li {
+    font-size: .8em;
+  }
+
   #legend p{
     font-family:sans-serif;
     font-size:16px;
@@ -77,7 +110,6 @@ especially code on tooltips and configurable scatterplot. -->
   }
 
   /* tooltip css */
-
   #info{
     position:absolute;
     width:170px;
@@ -109,6 +141,10 @@ especially code on tooltips and configurable scatterplot. -->
     display: none;
   }
 
+  ul {
+    padding-left:10px;
+  }​
+
 
   </style>
 </head>
@@ -126,32 +162,43 @@ especially code on tooltips and configurable scatterplot. -->
     <p id="schoolAndYear" >School, Year</p>
   </div>
 
-
-  <h1>Main Vis</h1>
+  <!-- page content -->
+  <h1>Diversity in the NESCAC Colleges, 2005-2015</h1>
   <h2>by Emily Sarich and Jamie Hand</h2>
 
 
-  <p>Year: <select id="yearMenu"><optgroup label="Year" id="yearDropDown"></optgroup></select></p>
-
-
-  <div id="container">
-    <div id="visDiv"></div>
+  <div id="descriptionAndLegend">
+    <div id="description">
+      <p>Year: <select id="yearMenu"><optgroup label="Year" id="yearDropDown"></optgroup></select></p>
+      <ul>
+        <li>Use the drop-down menu to select a year.</li>
+        <li>Click on a colored rectangle to bring its category to the bottom.</li>
+        <li>Hover to see a tooltip with more information.</li>
+        <li>Click on a college name to see an overview of first year enrollment
+        from 2005 to 2015.</li>
+      </ul>
+    </div>
     <div id="legend">
       <p>
         <h3>Ethnic Category</h3>
         <p id="collegeList"></p>
       </p>
     </div>
-    <div id="clear"></div>
-
   </div>
-  <div id="lineDiv" class="hidden"></div>
-  <div id="lineLegend" class = "hidden"></div> <!--TODO: make this appear -->
+  <div id="container">
+    <div id="visDiv"></div>
+
+    <div id="lineDivAndTitle" class="hidden">
+      <h3 id="lineDivTitle">Amherst</h3>
+      <div id="lineDiv"></div>
+    </div>
+    <div id="clear"></div>
+  </div>
 
   <script>
 
 
-  width = 700;
+  width = 600;
   height = 500;
 
   var createMainVis = function(data){
@@ -193,64 +240,60 @@ especially code on tooltips and configurable scatterplot. -->
       .key(function(d){return d.ethnic_cat;})
       .entries(data);
 
-      console.log("nested college data: ");
-      console.log(nested);
-
       /* now we want to create a new, hidden svg for the line visualization
       it will become unhidden on the first click of the x-axis ticks
       */
+      /* TODO make these different from mainvis / oddly specific */
       var lineWidth = 400;
-      var lineHeight = 400;
-      var margin = {top: 20, right: 50, bottom: 40, left: 30};
-      //   width = 500 - margin.left - margin.right,
-      //   height = 500 - margin.top - margin.bottom;
+      var lineHeight = 300;
+      var margin2 = {top: 20, right: 50, bottom: 40, left: 30};
 
-      /* make x and y scales */
+      /* make x, y, and color scales */
       var x2 = d3.scale.ordinal().rangeRoundBands([0, lineWidth]);
       var y2 = d3.scale.linear().rangeRound([lineHeight, 0]);
       var color = d3.scale.category10();
-      // var colorValue = function(d) {
-      //     return d.ethnic_cat;
-      // };
-
 
       var svg = d3.select("#lineDiv").append("svg")
-      .attr("width", lineWidth + margin.left + margin.right)
-      .attr("height", lineHeight + margin.top + margin.bottom);
+      .attr("width", lineWidth + margin2.left + margin2.right)
+      .attr("height", lineHeight + margin2.top + margin2.bottom)
 
 
       var chart = svg.append("g")
-      .attr("transform", "translate("+margin.left+","+margin.top+")");
+      .attr("transform", "translate("+margin2.left+","+margin2.top+")");
 
+      /* make line vis axes */
       var xAxisG = chart.append("g")
       .attr({
         "class": "axis_title",
         "transform": "translate(0,"+lineHeight+")"
       });
-      var xAxis = d3.svg.axis()
+
+      var xAxis2 = d3.svg.axis()
       .scale(x2)
       .orient("bottom");
-
 
       var xAxisTitle = xAxisG.append("text")
       .attr({
         "x":lineWidth/2,
-        "y":(margin.bottom - 5),
+        "y":(margin2.bottom - 5),
         "text-anchor":"middle"
       })
       .text("Year");
+
 
       var yAxisG = chart.append("g")
       .attr({
         "class": "axis_title"
       });
-      var yAxis = d3.svg.axis()
+
+      var yAxis2 = d3.svg.axis()
       .scale(y2)
       .orient("left");
+
       var yAxisTitle = yAxisG.append("text")
       .attr({
-        "x":-lineWidth/2,
-        "y":1/2 * -margin.left,
+        "x":-lineHeight/2,
+        "y":1/2 * -margin2.left,
         "text-anchor":"middle",
         "transform":"rotate(-90)"
       })
@@ -258,73 +301,60 @@ especially code on tooltips and configurable scatterplot. -->
 
       /* draws a linechart for one college in the lineDiv */
       createLineVis.drawLineVis = function(college_index){
-        console.log(nested[college_index]);
         var college = nested[college_index]; //the object for the college we want to draw
 
-    //     //now come the fun part: drawing a line chart. The good news: the axes are already set up
-    //     /*
-    //     x.domain(stackedData[0].values.map(function(d) {return d.x;}));
-    //     y.domain([0, d3.max(stackedData,
-    //     function(d){
-    //     return d3.max(d.values, function(e){
-    //     return +e.y0 + +e.y;
-    //   });
-    // })]).nice();
-    // */
-    //
-    // x2.domain(college.values.map(function(d) {return d.year;}));
-    // y2.domain(d3.extent(college.values, function(d){
-    //   return d3.extent(d.values,function(e){
-    //     return +e.num_firstyears;
-    //   })
-    //
-    // }));
-    //
-    // //DRAW PATH OR SOMETHING NOW/HERE
+        x2.domain(college.values[0].values.map(function(obj) {
+          return obj.year;
+          })
+        );
+        y2.domain([0, d3.max(college.values, function(d){
+          var innerMax = d3.max(d.values,function(e){
+            return +e.num_firstyears;
+          });
+          return innerMax;
+        })]);
 
-    x2.domain(college.values[0].values.map(function(obj) {
-      return obj.year;
-      })
-    );
-    y2.domain([0, d3.max(college.values, function(d){
-      var innerMax = d3.max(d.values,function(e){
-        return +e.num_firstyears;
-      });
-      return innerMax;
-    })]);
+        var vals = college.values;
 
-    //DRAW PATH OR SOMETHING NOW/HERE
+        var line = d3.svg.line()
+        .x(function(d) {
+          return margin2.left + x2(+d.year); })
+        .y(function(d) {
+          return y2(+d.num_firstyears); });
 
-    var vals = college.values;
-    console.log(vals);
+        chart.selectAll("path").remove();
+        chart.selectAll(".axis").remove();
 
-    var line = d3.svg.line()
-    .x(function(d) {
-      return x2(+d.year); })
+        /* update title to reflect school name */
+        var title = d3.select("#lineDivTitle").text(college.key)
 
-    .y(function(d) {
-      return y2(+d.num_firstyears); });
+        var paths = chart.selectAll("path").data(vals);
 
-    chart.selectAll("path").remove();
+        paths.enter().append("path")
+        .attr("class","line")
+        .attr("d",function(d){
+          return line(d.values); })
+        .style("stroke", function(d){return color(d.key);})
+        .style("stroke-width","4px")
+        .style("fill", "none");
 
-    var paths = chart.selectAll("path").data(vals);
+        chart.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate("+margin2.left+","+lineHeight+")")
+        .call(xAxis2);
 
-    paths.enter().append("path")
-    .attr("class","line")
-    .attr("d",function(d){
-      console.log(d.values);
-      return line(d.values); })
-    .style("stroke", function(d){return color(d.key);})
-    .style("stroke-width","4px")
-    .style("fill", "none");
+        chart.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate("+margin2.left+",0)")
+        .call(yAxis2);
 
-  };
+      };
 
-  //default to drawing Amherst, but it won't matter because it's hidden
-  createLineVis.drawLineVis(0);
-  return createLineVis;
+      //default to drawing Amherst, but it won't matter because it's hidden
+      createLineVis.drawLineVis(0);
+      return createLineVis;
 
-};
+    };
 
     var create = createLineVis(data);
 
@@ -344,7 +374,6 @@ especially code on tooltips and configurable scatterplot. -->
       });
     })
     .entries(data);
-    // console.log(nested);
 
     var yearDrop = d3.select("#yearDropDown");
     for (i in nested){
@@ -353,7 +382,6 @@ especially code on tooltips and configurable scatterplot. -->
     }
 
     /* make a machine that does the stacking */
-    // stack an array of objects, with x = 2005, y = num_firstyears, y0 = i
     var stack = d3.layout.stack()
     .values(function(d){
       return d.values;
@@ -362,6 +390,7 @@ especially code on tooltips and configurable scatterplot. -->
     /* actually stack the data */
     var stackedData = stack(nested[0].values);
 
+    /* MAIN VIS */
     /* make x, y, and color scales */
     var x = d3.scale.ordinal().rangeRoundBands([0, width]);
     var y = d3.scale.linear().rangeRound([height, 0]);
@@ -376,7 +405,7 @@ especially code on tooltips and configurable scatterplot. -->
     var chart = svg.append("g")
     .attr("transform", "translate("+margin.left+","+margin.top+")");
 
-    /* make axes */
+    /* make main vis axes */
     var xAxisG = chart.append("g")
     .attr({
       "class": "axis_title",
@@ -404,7 +433,7 @@ especially code on tooltips and configurable scatterplot. -->
     .orient("left");
     var yAxisTitle = yAxisG.append("text")
     .attr({
-      "x":-width/2,
+      "x":-height/2,
       "y":1/2 * -margin.left,
       "text-anchor":"middle",
       "transform":"rotate(-90)"
@@ -551,21 +580,15 @@ especially code on tooltips and configurable scatterplot. -->
         so that when a college is clicked, a new visualization will pop up */
         svg.selectAll(".tick")
         .on("click", function(d,i) {
-          // console.log(d);
-          // console.log(i);
-
           /* in this function we will call a function that draws our second vis
           this vis will be a line chart that shows the ethnic breakdown of
           the selected school over time
           */
-          //TODO: write that function
-          //TODO: get college
-          var lineDiv = d3.select("#lineDiv")
+          var lineDiv = d3.select("#lineDivAndTitle")
           lineDiv.classed("hidden", false);
-          create.drawLineVis(i);
-          /* we pass the index here to be able to access the right data in our other nested data */
-
-
+          /* we pass the index here to be able to access the right data in our
+           * other nested data; index differentiates colleges */
+           create.drawLineVis(i);
         });
 
         chart.append("g")
