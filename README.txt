@@ -6,9 +6,9 @@ This project was created by Jamie Hand ('16.5) and Emily Sarich ('16) for
 CS465, Information Visualization.
 
 To deploy, make sure the file 'college_data.csv' is in the same directory
-as the main visualization file, 'diversity_vis.html'. The main visualization file can be
-opened locally or deployed on a server.
-It is also available on github at https://github.com/jamiehand/infovis-collegediversity
+as the main visualization file, 'diversity_vis.html'. The main visualization file
+can be opened locally or deployed on a server. It is also available through its
+github page at http://jamiechand.com/infovis-collegediversity/.
 
 //Data:
 Our data is comprised of the Common Data Sets (CDS) of the NESCAC colleges.
